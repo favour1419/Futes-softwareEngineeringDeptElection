@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Departmental Election</title>
+<style>
+/* ===== 1. COLOURS (the committee can change the main colour in Settings) ===== */
+:root{--bg:#f4f1ea;--paper:#fffdf8;--ink:#1c1c1c;--muted:#6a665d;--line:#d9d3c5;--accent:#1b365d;--ok:#2f6b3f;--bad:#9b2c2c}
+@media (prefers-color-scheme:dark){:root{color-scheme:dark;--bg:#16171a;--paper:#1f2125;--ink:#ece8df;--muted:#a09b90;--line:#383a40;--ok:#6fbf86;--bad:#e08a8a}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:17px/1.55 "Source Sans 3",system-ui,-apple-system,"Segoe UI",sans-serif}
+h1,h2,h3{font-family:"Source Serif 4",Georgia,"Times New Roman",serif;font-weight:600;line-height:1.2;margin:0 0 .5em}
+.wrap{max-width:720px;margin:0 auto;padding:0 18px}
+
+/* ===== 2. HEADER ===== */
+header{background:var(--accent);color:#fff;padding:calc(14px + env(safe-area-inset-top,0px)) 0 8px;border-bottom:4px double rgba(255,255,255,.45)}
+.brand{display:flex;gap:14px;align-items:center}
+.brand img{height:52px;width:auto;background:#fff;padding:4px}
+.school{font-size:12px;letter-spacing:.14em;text-transform:uppercase;opacity:.85}
+header h1{font-size:21px;margin:2px 0 0;color:#fff}
+nav{display:flex;gap:18px;margin-top:6px}
+nav button{background:none;border:0;color:#fff;opacity:.8;padding:8px 0;cursor:pointer;font:inherit;font-size:15px;border-bottom:2px solid transparent}
+nav button.on{opacity:1;border-color:#fff}
+
+/* ===== 3. CARDS, FORMS, BUTTONS ===== */
+main{padding:20px 0 40px}
+.paper{background:var(--paper);border:1px solid var(--line);padding:22px;margin-bottom:18px}
+label{display:block;font-size:14px;color:var(--muted);margin:12px 0 4px}
+input[type=text],input[type=password],input[type=color],input[type=datetime-local],textarea,select{width:100%;min-height:48px;padding:10px 12px;font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:2px}
+textarea{min-height:110px}
+.btn{min-height:48px;padding:10px 22px;margin-top:16px;font:inherit;font-weight:600;color:#fff;background:var(--accent);border:0;border-radius:2px;cursor:pointer}
+.btn.alt{background:none;color:var(--accent);border:1px solid var(--accent)}
+.btn.full{width:100%}.btn.small{min-height:36px;padding:4px 12px;margin:0;font-size:14px}
+.btn:disabled{opacity:.5}
+.msg{margin-top:12px;color:var(--bad);font-size:15px}.msg.ok{color:var(--ok)}
+.note{color:var(--muted);font-size:14px}
+.status{display:inline-block;padding:3px 10px;border:1px solid currentColor;font-size:13px;letter-spacing:.06em;text-transform:uppercase}
+.status.open{color:var(--ok)}.status.closed{color:var(--bad)}
+ol.steps{padding-left:20px;margin:8px 0}
+
+/* ===== 4. BALLOT ===== */
+.post{border-top:3px double var(--line);padding-top:16px;margin-top:24px}
+.num{font-size:13px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.cand{display:flex;gap:14px;align-items:center;padding:12px 8px;border-bottom:1px solid var(--line);cursor:pointer;margin:0;color:var(--ink);font-size:17px}
+.cand:has(input:checked){background:color-mix(in srgb,var(--accent) 10%,transparent)}
+.cand input{position:absolute;opacity:0}
+.box{flex:none;width:26px;height:26px;border:2px solid var(--ink)}
+.cand input:checked+.box{background:var(--accent);border-color:var(--accent);box-shadow:inset 0 0 0 4px var(--paper)}
+.cand input:focus-visible+.box{outline:3px solid var(--accent);outline-offset:2px}
+.pic{flex:none;width:64px;height:76px;object-fit:cover;background:color-mix(in srgb,var(--accent) 14%,var(--paper));display:flex;align-items:center;justify-content:center;font:600 22px Georgia,serif;color:var(--accent)}
+.cand b{display:block}.bio{font-size:14px;color:var(--muted);line-height:1.35;display:block}
+
+/* ===== 5. ADMIN + RESULTS ===== */
+.tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px}
+.tabs button{min-height:40px;padding:6px 14px;font:inherit;font-size:15px;background:var(--paper);color:var(--ink);border:1px solid var(--line);cursor:pointer}
+.tabs button.on{background:var(--accent);color:#fff;border-color:var(--accent)}
+.row{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--line)}
+.bar{height:10px;background:var(--line);margin-top:4px}.bar i{display:block;height:100%;background:var(--accent)}
+.lock{padding:10px 12px;border:1px solid var(--bad);color:var(--bad);font-size:14px;margin-bottom:12px}
+footer{padding:10px 0 30px;text-align:center}
+</style>
+</head>
+<body>
+<header><div class="wrap">
+  <div class="brand"><img id="logo" alt="" hidden><div><div class="school" id="school"></div><h1 id="dept"></h1></div></div>
+  <nav><button id="n-home" onclick="go('home')">Vote</button><button id="n-results" onclick="go('results')">Results</button><button id="n-admin" onclick="go('admin')">Committee</button></nav>
+</div></header>
+<main><div class="wrap" id="app"><p class="note">Loading…</p></div></main>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script>
+/* ============================================================
+   A. CONNECTION  (paste your two Supabase values here, see SETUP-GUIDE)
+   ============================================================ */
+const SUPABASE_URL = 'https://jvdmxtyfrnubkhzmzssh.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_blVxtc1LT470x5SGztpgiQ_okzMkGta';
+let sb = null;
+try {
+  if (SUPABASE_URL.startsWith('PASTE')) throw new Error('missing');
+  sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+} catch (e) { sb = null; }
+const EMAIL_END = '@futes-election.com';   // usernames are turned into this hidden address
+
+/* ============================================================
+   B. SMALL HELPERS
+   ============================================================ */
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const initials = n => n.split(' ').map(w => w[0]).slice(0, 2).join('').toUpperCase();
+const toLocal = iso => { if (!iso) return ''; const d = new Date(iso); return new Date(d - d.getTimezoneOffset() * 6e4).toISOString().slice(0, 16); };
+const fmt = iso => iso ? new Date(iso).toLocaleString([], {dateStyle:'medium', timeStyle:'short'}) : '';
+const dur = ms => { const s = Math.floor(ms / 1e3); return (s >= 86400 ? Math.floor(s / 86400) + 'd ' : '') + Math.floor(s % 86400 / 3600) + 'h ' + Math.floor(s % 3600 / 60) + 'm ' + s % 60 + 's'; };
+function votingOpen() {                       // same rule the database uses
+  const n = Date.now();
+  return S.open && !(S.opens && n < new Date(S.opens)) && !(S.closes && n > new Date(S.closes));
+}
+
+/* ============================================================
+   C. PAGE STATE
+   ============================================================ */
+let S = {}, posts = [], cands = [], user = null, isAdmin = false, locked = false;
+let view = 'home', tab = 'settings', voter = '', picks = {}, msg = '', ok = false, photo = '', logoNew = null;
+let res = [], voterRows = [], logRows = [], nVotes = 0;
+
+function go(v) { view = v; msg = ''; voter = ''; picks = {}; if (v === 'results') loadResults(); render(); window.scrollTo(0, 0); }
+
+/* ============================================================
+   D. LOADING DATA FROM THE DATABASE
+   ============================================================ */
+async function refresh() {
+  const [s, p, c] = await Promise.all([
+    sb.from('settings').select('*').eq('id', 1).single(),
+    sb.from('posts').select('*').order('created'),
+    sb.from('candidates').select('*').order('name')]);
+  S = s.data || {}; posts = p.data || []; cands = c.data || [];
+  if (isAdmin) {
+    const [v, l, n] = await Promise.all([
+      sb.from('voters').select('*').order('matric'),
+      sb.from('log').select('*').order('id', {ascending: false}).limit(60),
+      sb.from('votes').select('*', {count: 'exact', head: true})]);
+    voterRows = v.data || []; logRows = l.data || []; nVotes = n.count || 0;
+    locked = S.open || nVotes > 0;
+  }
+  render();
+}
+async function loadResults() {
+  const r = await sb.rpc('get_results'); res = r.data || []; render();
+}
+async function logAct(text) { await sb.from('log').insert({ who: user, action: text }); }
+
+/* Runs an admin change, records it in the log, then reloads */
+async function act(promise, text) {
+  const { error } = await promise;
+  if (error) { msg = 'Not saved: ' + error.message; ok = false; render(); return false; }
+  await logAct(text); msg = 'Saved.'; ok = true; await refresh(); return true;
+}
+
+/* ============================================================
+   E. VOTER SIDE
+   ============================================================ */
+function homeView() {
+  return `<div class="paper"><h2>${esc(S.title)}</h2>
+    <span class="status ${votingOpen() ? 'open' : 'closed'}">Voting ${votingOpen() ? 'open' : 'closed'}</span>
+    <p class="note">${S.opens ? 'Opens ' + fmt(S.opens) + '. ' : ''}${S.closes ? 'Closes ' + fmt(S.closes) + '.' : ''} <b id="cd"></b></p>
+    <ol class="steps"><li>Enter your matric number.</li><li>Choose one candidate for each post.</li><li>Review and submit your vote.</li></ol>
+    <label for="matric">Enter your matric number to receive your ballot</label>
+    <input type="text" id="matric" autocomplete="off" autocapitalize="characters" placeholder="Matric number">
+    <button class="btn full" onclick="login()">Continue</button><div class="msg">${esc(msg)}</div></div>`;
+}
+async function login() {
+  const m = $('matric').value.trim();
+  if (!m) { msg = 'Please enter your matric number.'; return render(); }
+  const { data } = await sb.rpc('check_voter', { m });
+  const text = { unknown: 'This matric number is not on the voter list. Please contact the electoral committee.',
+                 voted: 'This matric number has already been used to vote.', closed: 'Voting is not open right now.' };
+  if (data === 'ok' && posts.length) { voter = m; picks = {}; view = 'ballot'; msg = ''; }
+  else msg = text[data] || (data === 'ok' ? 'The ballot has not been set up yet.' : 'Something went wrong. Please try again.');
+  render();
+}
+function ballotView() {
+  const body = posts.map((p, i) => {
+    const list = cands.filter(c => c.post_id === p.id);
+    const rows = list.map(c => `<label class="cand">
+      <input type="radio" name="p-${p.id}" ${picks[p.id] === c.id ? 'checked' : ''} onchange="picks['${p.id}']='${c.id}';count()">
+      <span class="box"></span>
+      ${c.photo ? `<img class="pic" src="${c.photo}" alt="">` : `<div class="pic">${esc(initials(c.name))}</div>`}
+      <div><b>${esc(c.name)}</b><span class="bio">${esc(c.bio)}</span></div></label>`).join('');
+    return `<section class="post"><div class="num">Post ${i + 1}</div><h3>${esc(p.name)}</h3>${rows || '<p class="note">No candidates for this post.</p>'}</section>`;
+  }).join('');
+  return `<div class="paper"><h2>Your ballot</h2><p class="note">Select one candidate for each post. <b id="cnt"></b></p>${body}
+    <div class="msg">${esc(msg)}</div><button class="btn full" onclick="toReview()">Review my choices</button></div>`;
+}
+const needed = () => posts.filter(p => cands.some(c => c.post_id === p.id));
+function count() { const e = $('cnt'); if (e) e.textContent = Object.keys(picks).length + ' of ' + needed().length + ' posts chosen.'; }
+function toReview() {
+  const miss = needed().filter(p => !picks[p.id]);
+  if (miss.length) { msg = 'Please choose a candidate for: ' + miss.map(p => p.name).join(', ') + '.'; return render(); }
+  view = 'review'; msg = ''; render(); window.scrollTo(0, 0);
+}
+function reviewView() {
+  const rows = posts.map(p => { const c = cands.find(x => x.id === picks[p.id]); return c ? `<div class="row"><span>${esc(p.name)}</span><b>${esc(c.name)}</b></div>` : ''; }).join('');
+  return `<div class="paper"><h2>Confirm your vote</h2><p class="note">You cannot change your vote after submitting.</p>${rows}
+    <div class="msg">${esc(msg)}</div>
+    <button class="btn full" onclick="submitVote()">Submit my vote</button><button class="btn alt full" onclick="view='ballot';render()">Go back</button></div>`;
+}
+async function submitVote() {
+  const { data } = await sb.rpc('cast_vote', { m: voter, picks });
+  if (data === 'ok') view = 'done';
+  else if (data === 'voted' || data === 'closed') { view = 'home'; msg = data === 'voted' ? 'This matric number has already voted.' : 'Voting has closed.'; }
+  else msg = 'Your vote was not saved. Please try again.';
+  render();
+}
+const doneView = () => `<div class="paper"><h2>Thank you</h2><p>Your vote has been recorded. This matric number can no longer be used to vote.</p><button class="btn full" onclick="go('home')">Finish</button></div>`;
+
+/* ============================================================
+   F. RESULTS
+   ============================================================ */
+function resultsView() {
+  if (!S.released && !isAdmin) return `<div class="paper"><h2>Results</h2><p>Results have not been released yet.</p></div>`;
+  const blocks = posts.map(p => {
+    const rows = cands.filter(c => c.post_id === p.id).map(c => ({ name: c.name, n: Number((res.find(r => r.candidate_id === c.id) || {}).n || 0) })).sort((a, b) => b.n - a.n);
+    const tot = rows.reduce((a, r) => a + r.n, 0);
+    return `<section class="post"><h3>${esc(p.name)}</h3>${rows.map((r, i) => `<div style="margin:10px 0"><div class="row" style="border:0;padding:0"><span>${i === 0 && r.n ? '<b>' + esc(r.name) + '</b>' : esc(r.name)}</span><b>${r.n}</b></div><div class="bar"><i style="width:${tot ? r.n / tot * 100 : 0}%"></i></div></div>`).join('')}</section>`;
+  }).join('');
+  return `<div class="paper"><h2>Results</h2><p class="note">${S.released ? 'Official results.' : 'Visible to the committee only until released.'}</p>${blocks}</div>`;
+}
+
+/* ============================================================
+   G. COMMITTEE (ADMIN) SIDE
+   ============================================================ */
+function adminView() {
+  if (!isAdmin) return `<div class="paper"><h2>Committee login</h2>
+    <label for="u">Username</label><input type="text" id="u" autocapitalize="none" autocomplete="username">
+    <label for="pw">Password</label><input type="password" id="pw" autocomplete="current-password">
+    <button class="btn full" onclick="adminLogin()">Sign in</button><div class="msg">${esc(msg)}</div></div>`;
+  const names = { settings: 'Settings', posts: 'Posts', cands: 'Candidates', voters: 'Voters', control: 'Election', log: 'Log', account: 'Account' };
+  return `<div class="tabs">${Object.keys(names).map(k => `<button class="${tab === k ? 'on' : ''}" onclick="tab='${k}';msg='';render()">${names[k]}</button>`).join('')}</div>${adminTab()}`;
+}
+async function adminLogin() {
+  const u = $('u').value.trim().toLowerCase();
+  const { error } = await sb.auth.signInWithPassword({ email: u + EMAIL_END, password: $('pw').value });
+  if (error) { msg = 'Incorrect username or password.'; return render(); }
+  await checkAdmin();
+}
+async function checkAdmin() {
+  const { data: { session } } = await sb.auth.getSession();
+  if (!session) return;
+  const { data } = await sb.from('admins').select('user_id');
+  isAdmin = !!(data && data.length);
+  user = session.user.email.replace(EMAIL_END, '');
+  if (!isAdmin) { await sb.auth.signOut(); msg = 'This account is not a committee account.'; }
+  msg = isAdmin ? '' : msg; await refresh();
+}
+const lockNote = () => locked ? '<div class="lock">Locked: voting has started, so this cannot be changed.</div>' : '';
+const dis = () => locked ? 'disabled' : '';
+function adminTab() {
+  const m = `<div class="msg ${ok ? 'ok' : ''}">${esc(msg)}</div>`;
+  if (tab === 'settings') return `<div class="paper"><h2>Settings</h2>
+    <label>School name</label><input type="text" id="s-school" value="${esc(S.school)}">
+    <label>Department name</label><input type="text" id="s-dept" value="${esc(S.dept)}">
+    <label>Election title</label><input type="text" id="s-title" value="${esc(S.title)}">
+    <label>Main colour</label><input type="color" id="s-color" value="${esc(S.color)}">
+    <label>Logo (image file)</label><input type="file" accept="image/*" onchange="readImg(this,0,120,false,d=>logoNew=d)">
+    <label>Voting opens</label><input type="datetime-local" id="s-opens" value="${toLocal(S.opens)}" ${S.open ? 'disabled' : ''}>
+    <label>Voting closes</label><input type="datetime-local" id="s-closes" value="${toLocal(S.closes)}">
+    <p class="note">The opening time cannot be changed while the open switch is on. The closing time can be extended.</p>
+    <button class="btn" onclick="saveSettings()">Save settings</button>${m}</div>`;
+  if (tab === 'posts') return `<div class="paper"><h2>Posts</h2>${lockNote()}
+    <label>New post (for example President)</label><input type="text" id="p-name" ${dis()}>
+    <button class="btn" ${dis()} onclick="addPost()">Add post</button>${m}
+    ${posts.map(p => `<div class="row"><span>${esc(p.name)}</span><button class="btn alt small" ${dis()} onclick="delPost('${p.id}')">Remove</button></div>`).join('')}</div>`;
+  if (tab === 'cands') return `<div class="paper"><h2>Candidates</h2>${lockNote()}
+    <label>Post</label><select id="c-post" ${dis()}>${posts.map(p => `<option value="${p.id}">${esc(p.name)}</option>`).join('')}</select>
+    <label>Candidate name</label><input type="text" id="c-name" ${dis()}>
+    <label>Short bio (optional)</label><input type="text" id="c-bio" ${dis()}>
+    <label>Photo</label><input type="file" accept="image/*" ${dis()} onchange="readImg(this,300,360,true,d=>photo=d)">
+    <button class="btn" ${dis()} onclick="addCand()">Add candidate</button>${m}
+    ${posts.map(p => `<h3 style="margin-top:22px">${esc(p.name)}</h3>` + cands.filter(c => c.post_id === p.id).map(c => `<div class="row"><span>${esc(c.name)}</span><button class="btn alt small" ${dis()} onclick="delCand('${c.id}')">Remove</button></div>`).join('')).join('')}</div>`;
+  if (tab === 'voters') return `<div class="paper"><h2>Voter list</h2>${lockNote()}
+    <p class="note">${voterRows.length} registered, ${voterRows.filter(v => v.voted).length} voted.</p>
+    <label>Paste matric numbers (one per line or separated by commas)</label><textarea id="v-text" ${dis()}></textarea>
+    <label>Or upload a CSV file</label><input type="file" accept=".csv,.txt" ${dis()} onchange="readCSV(this)">
+    <button class="btn" ${dis()} onclick="addVoters()">Add to voter list</button>
+    <button class="btn alt" ${dis()} onclick="clearVoters()">Clear voter list</button>${m}
+    ${voterRows.map(v => `<div class="row"><span>${esc(v.matric)}</span><span class="note">${v.voted ? 'Voted' : 'Not yet'}</span></div>`).join('')}</div>`;
+  if (tab === 'control') return `<div class="paper"><h2>Election controls</h2>
+    <p>Voting is <span class="status ${votingOpen() ? 'open' : 'closed'}">${votingOpen() ? 'open' : 'closed'}</span> · Turnout ${voterRows.filter(v => v.voted).length} of ${voterRows.length}</p>
+    <button class="btn" onclick="upd({open:${!S.open}},'${S.open ? 'Closed' : 'Opened'} voting')">${S.open ? 'Close voting' : 'Open voting'}</button>
+    <button class="btn alt" onclick="upd({released:${!S.released}},'${S.released ? 'Hid' : 'Released'} results')">${S.released ? 'Hide results from voters' : 'Release results to voters'}</button>
+    <p class="note" style="margin-top:20px">After testing, clear the test votes. This works only while voting is closed.</p>
+    <button class="btn alt" onclick="resetElection()">Clear all votes and reset voters</button>${m}</div>`;
+  if (tab === 'log') return `<div class="paper"><h2>Change log</h2>${logRows.map(l => `<div class="row"><span>${esc(l.action)}<br><span class="note">${esc(l.who)}</span></span><span class="note">${fmt(l.at)}</span></div>`).join('') || '<p class="note">Nothing yet.</p>'}</div>`;
+  return `<div class="paper"><h2>Account</h2><p class="note">Signed in as ${esc(user)}</p>
+    <label>Current password</label><input type="password" id="pw0" autocomplete="current-password">
+    <label>New password (at least 8 characters)</label><input type="password" id="pw1" autocomplete="new-password">
+    <label>New password again</label><input type="password" id="pw2" autocomplete="new-password">
+    <button class="btn" onclick="changePw()">Change password</button>${m}
+    <button class="btn alt" onclick="signOut()">Sign out</button></div>`;
+}
+const upd = (patch, text) => act(sb.from('settings').update(patch).eq('id', 1), text);
+async function saveSettings() {
+  const v = id => $(id).value, t = id => v(id) ? new Date(v(id)).toISOString() : null;
+  const patch = { school: v('s-school'), dept: v('s-dept'), title: v('s-title'), color: v('s-color'), closes: t('s-closes') };
+  if (!S.open) patch.opens = t('s-opens');
+  if (logoNew) patch.logo = logoNew;
+  logoNew = null; await upd(patch, 'Changed settings');
+}
+const addPost = () => { const n = $('p-name').value.trim(); if (n) act(sb.from('posts').insert({ name: n }), 'Added post: ' + n); };
+const delPost = id => confirm('Remove this post and its candidates?') && act(sb.from('posts').delete().eq('id', id), 'Removed a post');
+const addCand = () => {
+  const n = $('c-name').value.trim(), p = $('c-post').value;
+  if (!n || !p) { msg = 'Choose a post and enter a name.'; ok = false; return render(); }
+  act(sb.from('candidates').insert({ post_id: p, name: n, bio: $('c-bio').value.trim(), photo }), 'Added candidate: ' + n); photo = '';
+};
+const delCand = id => act(sb.from('candidates').delete().eq('id', id), 'Removed a candidate');
+function readCSV(i) { const f = i.files[0]; if (!f) return; const r = new FileReader(); r.onload = () => $('v-text').value = r.result; r.readAsText(f); }
+function addVoters() {
+  const rows = [...new Set($('v-text').value.split(/[\s,;]+/).map(x => x.trim()).filter(Boolean))].map(matric => ({ matric }));
+  if (rows.length) act(sb.from('voters').upsert(rows, { onConflict: 'matric', ignoreDuplicates: true }), 'Added ' + rows.length + ' matric numbers');
+}
+const clearVoters = () => confirm('Delete the whole voter list?') && act(sb.from('voters').delete().neq('matric', ''), 'Cleared the voter list');
+const resetElection = () => confirm('This deletes every vote and lets all voters vote again. Continue?') && act(sb.rpc('reset_election'), 'Cleared all votes and reset voters');
+async function changePw() {
+  const a = $('pw0').value, b = $('pw1').value;
+  ok = false;
+  if (b.length < 8) msg = 'The new password must be at least 8 characters.';
+  else if (b !== $('pw2').value) msg = 'The two new passwords do not match.';
+  else {
+    const t = await sb.auth.signInWithPassword({ email: user + EMAIL_END, password: a });
+    if (t.error) msg = 'The current password is incorrect.';
+    else { const u = await sb.auth.updateUser({ password: b }); msg = u.error ? u.error.message : 'Password changed.'; ok = !u.error; if (ok) await logAct('Changed own password'); }
+  }
+  render();
+}
+async function signOut() { await sb.auth.signOut(); isAdmin = false; user = null; view = 'home'; render(); }
+
+/* Shrinks a chosen image before saving. cover=true crops to w x h; otherwise keeps the shape at height h. */
+function readImg(input, w, h, cover, done) {
+  const f = input.files[0]; if (!f) return;
+  const r = new FileReader();
+  r.onload = () => {
+    const img = new Image();
+    img.onload = () => {
+      const c = document.createElement('canvas'), x = c.getContext('2d');
+      if (cover) { c.width = w; c.height = h; const k = Math.max(w / img.width, h / img.height); x.drawImage(img, (w - img.width * k) / 2, (h - img.height * k) / 2, img.width * k, img.height * k); }
+      else { const k = h / img.height; c.width = img.width * k; c.height = h; x.drawImage(img, 0, 0, c.width, c.height); }
+      done(c.toDataURL(cover ? 'image/jpeg' : 'image/png', 0.8));
+    };
+    img.src = r.result;
+  };
+  r.readAsDataURL(f);
+}
+
+/* ============================================================
+   H. DRAWING THE PAGE
+   ============================================================ */
+function render() {
+  document.documentElement.style.setProperty('--accent', S.color || '#1b365d');
+  $('school').textContent = S.school || ''; $('dept').textContent = S.dept || '';
+  const lg = $('logo'); lg.hidden = !S.logo; if (S.logo) lg.src = S.logo;
+  document.title = (S.title || 'Election') + ' | ' + (S.school || '');
+  const nav = ['ballot', 'review', 'done'].includes(view) ? 'home' : view;
+  ['home', 'results', 'admin'].forEach(n => $('n-' + n).classList.toggle('on', n === nav));
+  const pages = { home: homeView, ballot: ballotView, review: reviewView, done: doneView, results: resultsView, admin: adminView };
+  $('app').innerHTML = pages[view](); count(); tick();
+}
+function tick() {                                  // live countdown on the landing page
+  const e = $('cd'); if (!e) return;
+  const n = Date.now(), o = S.opens && new Date(S.opens), c = S.closes && new Date(S.closes);
+  e.textContent = !S.open ? '' : o && n < o ? 'Opens in ' + dur(o - n) : c && n > c ? 'Voting has closed.' : c ? 'Closes in ' + dur(c - n) : '';
+}
+setInterval(tick, 1000);
+(async () => {
+  if (!sb) { $('app').innerHTML = '<div class="paper"><h2>Not connected yet</h2><p>This page needs your two Supabase values (SETUP-GUIDE, step 5) and an internet connection. Until then it cannot load.</p></div>'; return; }
+  await refresh(); await checkAdmin();
+})();
+</script>
+</body>
+</html>
